@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        div{
+         width: 85%;
+         margin-left: 105px;
+         margin-top: 25px;
+        }
+        button {
+         padding: 15px 25px;
+         font-size: 1px;
+         text-align: center;
+         cursor: pointer;
+         outline: none;
+         color: #fff;
+         background-color: #000000;
+         border: none;
+         border-radius: 15px;
+         box-shadow: 0 9px #680303;
+         cursor: pointer;
+        }
+
+        button:hover {
+         background-color: #ff0000;
+         font-size: 24px;
+         transition: 1s;
+         border-style: solid;
+         border-color: #000000;
+ 
+        }
+
+        button:active {
+         background-color: #ff0000;
+         box-shadow: 0 5px #666;
+         transform: translateY(4px);
+        }
+    </style>
+
+</head>
+
+
+<body>
+    <center>
+        <button onclick="sehirler()">Aradığınız şehrin plakasını girmek için tıklayınız</button>
+     </center>
+    <div class="container"><img id="myimg" width="100%" src="../Plaka=Şehirler/Pictures/15a0b3249480f1463e220fa70a976de0.jpg" alt=""></div>
+
+
+    <script>
+        function sehirler() {
+            let plaka = prompt("Plaka giriniz...");
+
+            if (plaka == "01") {
+                alert("aradığınız şehir adanadır");
+
+                const img = document.getElementById('myimg')
+                img.src = ('Pictures/adana.jpeg');
+                
+                
+            }
+
+            else if (plaka == 35) {
+                alert("aradığınız şehir izmirdir");
+
+                const img = document.getElementById('myimg')
+                img.src = ('https://media.tenor.com/1gfFPoVjWTEAAAAM/izmir-turkey.gif');
+                
+            }
+            
+
+            else if (plaka == 23) {
+                alert("aradığınız şehir elazığdır");
+
+                const img = document.getElementById('myimg')
+                img.src =('https://trthaberstatic.cdn.wp.trt.com.tr/resimler/1998000/haput-mahallesi-1998771.jpg');
+            }
+
+            else {
+                alert("Aradığınız şehir bulunamadı.(Elazığ(23)-İzmir(35)-Adana(01) şehirlerini aratabilirsiniz)");
+
+                const img = document.getElementById('myimg')
+                img.src = ('pictures/trplaka.jpg');
+            }
+
+        }
+    </script>
+</body>
+
+</html>

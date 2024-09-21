@@ -1,0 +1,176 @@
+#container{
+    width: 1000px;
+    height: 400px;
+    background-color: rgb(219, 215, 215);
+    padding: 25px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-column-gap: 15px;
+    margin-top: 110px;
+    border-style: double;
+}
+#bölüm1{
+    background-color: rgb(171, 12, 171) ;
+    color: white;
+    border-radius: 5px;
+    text-align: left;
+}
+#puan1{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#yildiz1{
+    text-align: right;
+}
+#yildizz1{
+    
+}
+#baslik1{
+    font-size: x-large;
+    margin-top: 7px;
+}
+#aciklama1{
+    font-size: small;
+    margin-top: 7px;
+}
+#saat1{
+    margin-top: 7px;
+}
+#süre1{
+    font-size: larger;
+    text-align: center;
+}
+#son1{
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#bir1{
+    text-align: center;
+    background-color: rgb(140, 151, 255);
+    border-bottom-left-radius: 7px;
+}
+#iki1{
+    text-align: center;
+    background-color: rgb(152, 156, 199);
+    border-bottom-right-radius: 7px;
+}
+#iccontainer1{
+    border-style: groove;
+    height: 360px;
+    border-radius: 7px;
+     
+}
+
+
+
+
+#bölüm2{
+    background-color: rgb(12, 23, 171) ;
+    color: white;
+    border-radius: 5px;
+    text-align: left;
+}
+#puan2{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#yildiz2{
+    text-align: right;
+}
+#yildizz2{
+    
+}
+#baslik2{
+    font-size: x-large;
+    margin-top: 7px;
+}
+#aciklama2{
+    font-size: small;
+    margin-top: 7px;
+}
+#saat2{
+    margin-top: 7px;
+}
+#süre2{
+    font-size: larger;
+    text-align: center;
+}
+#son2{
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#bir2{
+    text-align: center;
+    background-color: rgb(155, 140, 255);
+    border-bottom-left-radius: 7px;
+}
+#iki2{
+    text-align: center;
+    background-color: rgb(152, 156, 199);
+    border-bottom-right-radius: 7px;
+}
+#iccontainer2{
+    border-style: groove;
+    height: 360px;
+    border-radius: 7px;
+     
+}
+
+
+
+
+
+#bölüm3{
+    background-color: rgb(12, 94, 171) ;
+    color: white;
+    border-radius: 5px;
+    text-align: left;
+}
+#puan3{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#yildiz3{
+    text-align: right;
+}
+#yildizz3{
+    
+}
+#baslik3{
+    font-size: x-large;
+    margin-top: 7px;
+}
+#aciklama3{
+    font-size: small;
+    margin-top: 7px;
+}
+#saat3{
+    margin-top: 7px;
+}
+#süre3{
+    font-size: larger;
+    text-align: center;
+}
+#son3{
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+#bir3{
+    text-align: center;
+    background-color: rgb(140, 144, 255);
+    border-bottom-left-radius: 7px;
+}
+#iki3{
+    text-align: center;
+    background-color: rgb(152, 155, 199);
+    border-bottom-right-radius: 7px;
+}
+#iccontainer3{
+    border-style: groove;
+    height: 360px;
+    border-radius: 7px;
+     
+}

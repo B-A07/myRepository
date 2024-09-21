@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+     <style>        
+
+      body{
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       min-height: 100vh;
+       background-image: url(img.jpg);
+       background-repeat: no-repeat;
+       background-position: center;
+       background-size: 100%;
+      }
+
+      .input-box input{
+       width: 100% ;
+       height: 100% ;
+       background: transparent;
+       border: none;
+       outline: none;
+       border: 2px solid rgba(255, 255, 255, .2);
+       border-radius: 40px;
+       font-size: 16px;
+       color: #fff;
+       padding: 20px 45px 20px 20px;
+      }
+
+      .input-box input::placeholder{
+       color: #fff;
+      }
+
+      .addBtn {
+       padding: 10px;
+       width: 25%;
+       background: #d9d9d9;
+       color: #555;
+       float: left;
+       text-align: center;
+       font-size: 16px;
+       cursor: pointer;
+       transition: 0.3s;
+       border-radius: 0;
+      
+
+       width: 25% ;
+       height: 100% ;
+       background: transparent;
+       border: none;
+       outline: none;
+       border: 2px solid rgba(255, 255, 255, .2);
+       border-radius: 40px;
+       font-size: 16px;
+       color: #fff;
+       padding: 20px 45px 20px 20px;
+      }
+
+      .addBtn:hover {
+       background-color: #bbb;
+      }
+
+      ul {
+       margin: 0;
+       padding: 0;
+       color: #fff;
+      }
+
+      ul li {
+       margin-left: 40px;
+       margin-top: 10px;
+       cursor: pointer;
+       position: relative;
+       padding: 12px 8px 12px 40px;
+       background: transparent;
+       font-size: 18px;
+       transition: 0.2s;
+       border: 2px solid rgba(255, 255, 255, .2);
+       border-radius: 40px;
+      }
+
+      ul li:hover {
+       background: transparent;
+       border-color: #555;
+      }
+
+      ul li.checked {
+       background:#697dc4;
+       color: #fff;
+       text-decoration: line-through;
+       border-radius: 40px;
+      }
+
+      ul li.checked::before {
+       content: '';
+       position: absolute;
+       border-color: #fff;
+       border-style: solid;
+       border-width: 0 2px 2px 0;
+       border-radius: 40px;
+       top: 10px;
+       left: 16px;
+       transform: rotate(45deg);
+       height: 15px;
+       width: 7px;
+      }
+
+     </style>
+
+
+
+
+</head>
+
+
+
+
+
+
+
+<body>
+
+
+
+    <div class="container badge bg-primary opacity-50">
+        <div class="row">
+           <div class="col">
+               <div class="input-box">
+                   <input width="100%" height="100%" type="text" id="inp1" placeholder="Yeni görev"> 
+               </div>
+           </div>
+       
+           <div class="col"><span onclick="newElement()" class="addBtn">Ekle</span></div>
+        </div>
+       
+        <div class="row">
+           <ul id="myUL">
+              
+           </ul>
+        </div>
+          </div>
+
+
+
+
+   <script>
+
+var myNodelist = document.getElementsByTagName("LI");
+ //butun li elemanlarını kendinde toplar
+var i;
+
+for (i = 0; i < myNodelist.length; i++) {//her li elemanını tek tek dolaşır
+  var span = document.createElement("SPAN"); //span oluşturur
+  var txt = document.createTextNode("\u00D7");
+  span.className = "close";//spanın classını close olrak belirledi
+  span.appendChild(txt);//metni spana ekler
+  myNodelist[i].appendChild(span);//bu oluşturulan spanı li elemanına ekler
+}
+
+//kapatma düğmesi
+var close = document.getElementsByClassName("close");//classı close olanları kendinde toplar
+var i;
+for (i = 0; i < close.length; i++) { //classı close olan elemanları tek tek dolaşır
+  close[i].onclick = function() { // tıklama olaynı ekler
+    var div = this.parentElement;
+    div.style.display = "none";//görünürlüüğünü kapatır
+  }
+}
+
+// Bir liste öğesine tıklandığında "işaretli" sembolü ekleyin
+
+var list = document.querySelector('ul'); // ul elemanını list değşkenine atar
+list.addEventListener('click', function(ev) { //tıklanma olayı ekler
+
+    ev.target.classList.toggle('checked');//checked sınıfını ekler
+
+}, false);
+
+// "Ekle" butonuna tıklandığında yeni bir liste öğesi oluşturulur
+
+function newElement() {
+  var li = document.createElement("li");//li elemanı ekler
+  var inputValue = document.getElementById("inp1").value;//inp1 idsine sahip inputa gönderilen veriyi değişkene atar
+  var t = document.createTextNode(inputValue); // değşkendeki veriyi texte çeviriyor
+  li.appendChild(t);//değşkendeki texti yeni oluşturulan Li elemanına ekler
+  if (inputValue === '') {
+    alert("Yeni bir görev ekle!");
+  } else {
+    document.getElementById("myUL").appendChild(li);//oluşturulan Li elemanını myUl listesine ekler
+  }
+  document.getElementById("inp1").value = "";//islemden sonra inputu temizler
+
+  var span = document.createElement("SPAN");
+  var txt = document.createTextNode("\u00D7");
+  span.className = "close";
+  span.appendChild(txt);
+  li.appendChild(span);
+
+  for (i = 0; i < close.length; i++) {
+    close[i].onclick = function() {
+      var div = this.parentElement;
+      div.style.display = "none";
+    }
+  }
+}
+   </script>
+    
+</body>
+</html>

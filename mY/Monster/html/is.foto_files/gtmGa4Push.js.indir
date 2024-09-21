@@ -1,0 +1,2021 @@
+/*
+
+    Note: 
+    sepetUrunSil, checkSepet, sepeteEkleCustomizeNew BE kodları ezildi. Kod içerisine dispatcherlar eklendi
+
+*/
+
+setTimeout(() => {
+    
+    // sepet ürün sil
+    window.sepetUrunSil = function(id, delType) {
+
+        var lang = getUrlVars(urlString)["lang"] || "";
+    
+        var url = "/sepet/sepetAjx.aspx/sepetUrunSil";
+    
+        if (lang != "")
+            url += "?lang=" + lang;
+    
+    
+        stage.dispatchEvent("CustomEvent", "REMOVE_FROM_CART", { type: 'BEFORE_REMOVE_FROM_CART'});    
+        pageMethod(url, '{"id":"' + id + '","delType":"' + delType + '"}', sepetUrunSilSuccess, sepetError);
+    };
+
+    // sepet güncelle
+    window.checkSepet = function(cartUpdFl, quantity, lineId, productId) {
+        var alsUpd = "";
+        var updObj = {
+            encIds: [],
+            lang: 'tr-TR'
+        };
+        
+        if ((quantity || '') == '' || (lineId || '') == '') {
+            $("input[id$='_txtURN_ADET']").each(function() {
+                var e = $(this);
+                var adet = e.val();
+                var ilkAdet = $("#" + e.attr("id").replace("txtURN_ADET", "hdnURN_ADET")).val();
+                // Adet sayısı harf yada 0 dan küçük olamaz
+                if ((isNaN(adet)) || (adet < 1)) {
+                    alert(strSPT_URUNADETHATA);
+                    return false;
+                }
+                if (adet !== ilkAdet) {
+                    if (e.attr("rel") != null) {
+                        var als = encodeURIComponent(e.attr("rel").replace(/'/g, "\'") || "");
+                        updObj.encIds.push(als + "|" + adet + "|" + ilkAdet + "|" + productId);
+                        alsUpd = alsUpd + (alsUpd === "" ? "" : ",") + als + ":" + adet;
+                    }
+                }
+            });
+        } else {
+
+            var previousQuantity = $("[id$='hdnURN_ADET'][data-id='" + lineId + "']").val();
+
+            updObj.encIds.push(lineId + "|" + quantity + "|" + previousQuantity + "|" + productId);
+            alsUpd = alsUpd + (alsUpd === "" ? "" : ",") + lineId + ":" + quantity;
+        }
+
+        
+        $("#" + objId + "_hdnALSUPD").val(alsUpd);
+
+        if (cartUpdFl != null && cartUpdFl) {
+
+            stage.dispatchEvent("CustomEvent", "UPDATE_FROM_CART", { type: 'BEFORE_UPDATE_FROM_CART'});
+
+            pageMethod("/sepet/sepetAjx.aspx/SepetGuncelle", JSON.stringify(updObj), function (resp) {
+                var ret = resp.d;
+                var err = fieldDondur(ret, "ERR_MESSAGE");
+                if (err == "") {
+
+                    if (typeof parent.executeAjxAnalyticScript !== "undefined") {
+                        parent.executeAjxAnalyticScript(ret);
+                    }
+
+                } else {
+                    alert(err);
+                }
+                
+                stage.dispatchEvent("CustomEvent", "UPDATE_FROM_CART", { type: 'AFTER_UPDATE_FROM_CART'});
+
+                setTimeout(function () {
+                    window.location.href = window.location.href;
+                }, 3000);
+
+            }, function (resp) {
+                if (console)
+                    console.log("Cart item removing err: \"" + resp.d + "\"");
+            });
+        }
+
+        return false;
+    }
+
+
+    // favori urunde sepete ekle
+    window.sepeteEkleFavoriUrun = function(productId, secenek, secenek2, clientId, rowId) {
+
+        var err = []; 
+        secenek = secenek || "";
+        secenek2 = secenek2 || ""; 
+
+        if (rowId <= 9)
+            rowId = "0" + rowId;
+         
+        if (secenek == "") {
+            var drpSecenek = document.getElementById(clientId + rowId+ '_drpSCD_KOD1');
+            if (drpSecenek != null) {
+                secenek = drpSecenek.value || 0;
+                if (secenek.indexOf('?') > -1)
+                    secenek = secenek.substring(0, secenek.indexOf('?'));
+                if(secenek==0)
+                    err.push(strFAVORI_URUNSECENEK1_HATA);
+            }
+        }
+
+         
+        if (secenek2 == "") {
+            var drpSecenek2 = document.getElementById(clientId + rowId+ '_drpSCD_KOD2');
+            if (drpSecenek2 != null) {
+                secenek2 = drpSecenek2.value || 0;
+                if (secenek2.indexOf('?') > -1)
+                    secenek2 = secenek2.substring(0, secenek2.indexOf('?'));
+                if (secenek2==0)
+                    err.push(strFAVORI_URUNSECENEK2_HATA);
+            }
+        }
+
+        if (err.length > 0)
+            alert(err.join("\n"));
+        else{
+            stage.dispatchEvent("CustomEvent", "sepeteEkleCustomizeNew", { type: 'BEFORE_ADD_TO_CART'});
+            sepeteEkle(productId, 1, secenek, secenek2, clientId, 1);  
+        } 
+            
+    }
+   
+    // 
+    window.removeItemConfirm = function(als, type) {
+        if (0 == 1)
+            emosConfirm(strSPT_SEPETSATIRSIL, function () { removeItemFromCart(als, type); });
+        else{
+            stage.dispatchEvent("CustomEvent", "REMOVE_FROM_CART", { type: 'BEFORE_REMOVE_FROM_CART'}); 
+            removeItemFromCart(als, type);
+        }  
+    }
+
+    window.removeItemFromCart = function(als, type) {
+        pageMethod("/sepet/sepetAjx.aspx/sepetUrunSil", "{'id':'" + als + "', 'delType':'" + type + "'}", function (resp) {
+            if (typeof parent.executeAjxAnalyticScript !== "undefined")
+                parent.executeAjxAnalyticScript((resp.d || ""));
+            stage.dispatchEvent("CustomEvent", "REMOVE_FROM_CART", { type: 'AFTER_REMOVE_FROM_CART'});   
+            setTimeout(function () {
+                window.location.href = window.location.href;
+            }, 3000);
+        }, function (resp) {
+            if (console)
+                console.log("Cart item removing err: \"" + resp.d + "\"");
+        });
+    }
+
+}, 555);
+
+function sepetUrunSilSuccess(result) {
+    sepetDoldur();
+    if (typeof executeAjxAnalyticScript !== "undefined")
+        executeAjxAnalyticScript((result.d || ""));
+
+    stage.dispatchEvent("CustomEvent", "REMOVE_FROM_CART", { type: 'AFTER_REMOVE_FROM_CART'});    
+}
+
+/*
+    Note: 
+    CartScripts.js deki sepeteEkleCustomizeNew yapısı ezilecek
+*/
+window.sepeteEkleCustomizeNew = function(obj, callback) {
+
+    var urn_kod = obj['urn_kod'] || '',
+        adet = obj['adet'] || 1,
+        secenek = obj['secenek'] || 0,
+        secenek2 = obj['secenek2'] || 0,
+        cup_kodlist = obj['cup_kodlist'] || '',
+        urn_kodlist = obj['urn_kodlist'] || '',
+        goCart = obj['goCart'] || false,
+        alsKey = obj['alsKey'] || '',
+        aciklama = obj['aciklama'] || '',
+        choices = obj['choices'] || '';
+
+    if (urn_kod == '' || cup_kodlist == '') return;
+
+    var currentInternalObj = {};
+    if (typeof previousPage !== 'undefined') {
+        currentInternalObj = previousPage.getCurrentData();
+    }
+
+    if (typeof bannerPromotionClick !== 'undefined'){
+        currentInternalObj = {...currentInternalObj, ...bannerPromotionClick.getPromotion()};
+    }
+
+    var formattedData = "";
+
+    for (const key in currentInternalObj) {
+        formattedData += `${key}:${currentInternalObj[key]}|`;
+    }
+
+    var uri =
+        "/sepet/sepetAjx.aspx?urn=" + urn_kod +
+        "&adet=" + adet +
+        "&sec=" + secenek +
+        "&sec2=" + secenek2 +
+        "&tip=1&ekle=1&alsKey=" + alsKey +
+        "&aciklama=" + aciklama +
+        "&choices=" + choices +
+        "&analyticData=" + encodeURIComponent(formattedData.replaceAll(/"/g, ''));
+       
+    var prm = 'cups=' + encodeURIComponent(cup_kodlist);
+
+    stage.dispatchEvent("CustomEvent", "sepeteEkleCustomizeNew", { type: 'BEFORE_ADD_TO_CART'});
+
+    emsGetAjx({ uri: uri, param: prm }, function success(data) {
+        if (fieldDondur(data, 'ERR_MESSAGE') == "") {
+
+            if ($("#lblUrunAdet", winParent.parent.document).html() != undefined) {
+                strUrnAdet = fieldDondur(data, 'URN_ADET');
+                if (strUrnAdet != "0" && strUrnAdet != "")
+                    $("#divKutuSepet_urunYok", winParent.parent.document).attr("style", "display:none");
+                $("#lblUrunAdet", winParent.parent.document).html(strUrnAdet);
+                $("#lblUrunTutari", winParent.parent.document).html(fieldDondur(data, 'URN_TUTAR'));
+                $("#divKutuSepet_icerik", winParent.parent.document).html(fieldDondur(data, 'URN_DETAY'));
+                executeAjxAnalyticScript(data);
+            }
+
+            if (urn_kodlist != "") {
+                goCart = false;
+                var aryUrnMaster = urn_kodlist.split('|');
+                var aryUrnDetay;
+                for (var i = 0; i < aryUrnMaster.length; i++) {
+                    aryUrnDetay = aryUrnMaster[i].split('$');
+
+                    prm =
+                        "urn=" + aryUrnDetay[0] +
+                        "&adet=1&sec=" + (aryUrnDetay[1] == "0" ? "" : aryUrnDetay[1]) +
+                        "&sec2=" + (aryUrnDetay[2] == "0" ? "" : aryUrnDetay[2]) +
+                        "&tip=1&ekle=1" +
+                        "&itemListId=" + (currentInternalObj.item_list_id == undefined ? "" : encodeURI(currecurrentInternalObjntObj.item_list_id)) +
+                        "&itemListName=" + (currentInternalObj.item_list_name == undefined ? "" : encodeURI(currentInternalObj.item_list_name.replaceAll('"', '')));
+
+                    $.get('/sepet/sepetAjx.aspx', prm, function (data2) {
+                        if (fieldDondur(data2, 'ERR_MESSAGE') == "") {
+                            goCart = true;
+                            eval(fieldDondur(data2, 'ANALYTIC').replace('</script>', ''));
+                        }
+                        else
+                            alert(fieldDondur(data2, 'ERR_MESSAGE'));
+                    });
+                }
+            }
+
+            if (callback != undefined)
+                callback({ result: 'OK' });
+
+            var cartScriptExc = fieldDondur(data, "CARTSCRIPT");
+            if (cartScriptExc != "")
+                eval(cartScriptExc);
+        }
+        else {
+            parseBasketErrResponse(data, false);
+            goCart = false;
+
+            if (callback != undefined)
+                callback({ result: 'ERROR' });
+        }
+
+        if (typeof stage !== "undefined")
+            stage.dispatchEvent("CustomEvent", "sepeteEkleCustomizeNew", { type: 'AFTER_ADD_TO_CART' });
+
+        if (goCart){
+            setTimeout(function() {
+                cartWin.location.href = '/sepet/sepetim.aspx';
+            }, 3000);
+        }
+        
+    });
+}
+
+/////////////// Utils 
+var utils = {
+
+    forEach: function (array, callback, scope) {
+        //https://css-tricks.com/snippets/javascript/loop-queryselectorall-matches/
+        for (var i = 0; i < array.length; i++) {
+            callback.call(scope, i, array[i]); // passes back stuff we need
+        }
+    },
+
+    trimText: function (k) {
+        k = k || '';
+        return k.replace(/(^\s+|\s+$)/g, '').replace(/^\s+|\s+$/g, '');
+    },
+
+    ajx: function (o, callback) {
+
+        o = o || {};
+        var uri = o['uri'] || '',
+            type = o['type'] || 'json', // json ve html degerlerini alir. default degeri json
+            method = o['method'] || 'POST',
+            headers = o['headers'] || { 'Content-Type': 'application/json' },
+            data = o['data'] || {},
+            _callback = function (res) {
+                if (typeof callback !== 'undefined')
+                    callback(res);
+            };
+
+        if (uri == '') {
+            _callback({ type: 'error' });
+            return false;
+        }
+
+
+        switch (type) {
+
+            case 'json':
+                return fetch(uri, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(data)
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        _callback({ type: 'success', data: res });
+
+                    })
+                    .catch(error => {
+                        _callback({ type: 'error', message: error });
+                    });
+
+            case 'html': {
+                var headers = {};
+                return fetch(uri)
+                    .then(res => {
+                        headers = res.headers || {};
+                        return res.text();
+                    })
+                    .then(function (html) {
+                        try {
+                            var parser = new DOMParser();
+                            var doc = parser.parseFromString(html, 'text/html');
+
+                            _callback({ type: 'success', data: html, doc: doc, headers: headers || {} });
+
+                        } catch (error) {
+                            _callback({ type: 'error', message: error.message });
+                        }
+
+                    }).catch(function (error) {
+                        _callback({ type: 'error', message: error });
+                    });
+            }
+
+            default:
+                break;
+        }
+    },
+    hasClass: function (o) {
+        o = o || {};
+        var elm = o['element'] || {},
+            classList = elm.classList || '', // classList
+            value = (o['value'] || '').replace(/\./g, ''); // içerisinde bakilacak class
+
+        return classList.contains(value) || false;
+    },
+    getElementOffset: function (el) {
+        /* https://muffinman.io/javascript-get-element-offset/ */
+        let top = 0;
+        let left = 0;
+        let element = el;
+
+        // Loop through the DOM tree
+        // and add it's parent's offset to get page offset
+        do {
+            top += element.offsetTop || 0;
+            left += element.offsetLeft || 0;
+            element = element.offsetParent;
+        } while (element);
+
+        return {
+            top,
+            left,
+        };
+    },
+
+    detectPosition: function (o) {
+        o = o || {};
+
+        var _t = this,
+            target = o['target'] || '',
+            targetBounding = target.getBoundingClientRect() || {},
+            rate = o['rate'] || 1,
+            threshold = parseFloat(o['threshold'] || '0'),
+            wst = document.body.scrollTop || document.documentElement.scrollTop || 0,
+            ht = window.innerHeight,
+            wt = window.innerWidth,
+            _min = ht,
+            o1 = { x: 0, y: wst, width: wt, height: (ht * rate) || _min },
+            o2 = { x: 0, y: _t.getElementOffset(target).top + threshold, width: targetBounding.width, height: (targetBounding.height * rate) || _min },
+            b = false;
+        if (o1.x < o2.x + o2.width && o1.x + o1.width > o2.x && o1.y < o2.y + o2.height && o1.y + o1.height > o2.y)
+            b = true;
+
+        /* 
+            özel durumlarda elementi geçtikten sonra tetiklenmesi için
+            örnegin ürün liste loadmore
+        */
+        if (o['elementNext']) {
+            if (o1.y >= o2.y + o2.height)
+                b = true;
+        }
+
+        return b;
+    },
+
+    getParents: function (elem, selector) {
+
+        /* 
+            https://github.com/happyBanshee/JS-helpers/wiki/.closest(),-.parents(),-.parentsUntil(),-.find()-in-JS
+
+            
+            var elem = document.querySelector('#some-element');
+            utils.getParents(elem, '.some-class');
+            utils.getParents(elem.parentNode, '[data-product-id]');
+
+        */
+
+        // Variables
+        var firstChar = selector.charAt(0);
+        var supports = 'classList' in document.documentElement;
+        var attribute, value;
+
+        // If selector is a data attribute, split attribute from value
+        if (firstChar === '[') {
+            selector = selector.substr(1, selector.length - 2);
+            attribute = selector.split('=');
+
+            if (attribute.length > 1) {
+                value = true;
+                attribute[1] = attribute[1].replace(/"/g, '').replace(/'/g, '');
+            }
+        }
+
+        // Get closest match
+        for (; elem && elem !== document && elem.nodeType === 1; elem = elem.parentNode) {
+
+            // If selector is a class
+            if (firstChar === '.') {
+                if (supports) {
+                    if (elem.classList.contains(selector.substr(1))) {
+                        return elem;
+                    }
+                } else {
+                    if (new RegExp('(^|\\s)' + selector.substr(1) + '(\\s|$)').test(elem.className)) {
+                        return elem;
+                    }
+                }
+            }
+
+            // If selector is an ID
+            if (firstChar === '#') {
+                if (elem.id === selector.substr(1)) {
+                    return elem;
+                }
+            }
+
+            // If selector is a data attribute
+            if (firstChar === '[') {
+                if (elem.hasAttribute(attribute[0])) {
+                    if (value) {
+                        if (elem.getAttribute(attribute[0]) === attribute[1]) {
+                            return elem;
+                        }
+                    } else {
+                        return elem;
+                    }
+                }
+            }
+
+            // If selector is a tag
+            if (elem.tagName.toLowerCase() === selector) {
+                return elem;
+            }
+
+        }
+
+        return null;
+
+    },
+};
+
+/////////////// Custom events
+
+var isGtmActive = true;
+
+var customEventsAnalytics = {
+
+    buttons: [
+        /* header_menu_clicks */
+        {
+            'type': 'addOnClick',
+            'eventType': 'header_menu_clicks',
+            'target': '.nav-main > ul li a',
+            'prop': {
+                'event': 'header_menu_clicks',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'changeProp': 'parameters.value'
+        },
+
+        /* footer_menu_clicks */
+        {
+            'type': 'addOnClick',
+            'eventType': 'footer_menu_clicks',
+            'target': '.site-footer-menu li a',
+            'prop': {
+                'event': 'footer_menu_clicks',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'changeProp': 'parameters.value'
+        },
+        
+        /* filter_clicks */
+        
+        {
+            'type': 'addOnClick',
+            'eventType': 'filter_clicks',
+            'target': '.urunKiyaslamaOzellik_ozellikIcerik .urunKiyaslamaOzellik_ozellik > a',
+            'prop': {
+                'event': 'filter_clicks',
+                'parameters': {
+                    'filter_category': '',
+                    'filter_value': '',
+                    'filter_result_count': '',
+                }
+            },
+            'customFunc': function (ID, obj) {
+
+                var id = $(ID),
+                    prts = id.parents('#dvUrunKiyaslamaOzellik'),
+                    name = prts.find('.urunKiyaslamaOzellik_ozellikAd').clone();
+                
+                name.find('span').remove();
+
+                obj['parameters']['filter_category'] = utils.trimText( name.text() || '' );
+                
+                obj['parameters']['filter_value'] = utils.trimText( id.text() || '');
+                
+                obj['parameters']['filter_result_count'] = utils.trimText( id.siblings('.filterQty').text() || '' ).match(/\d+/)[0];
+            
+                return obj;
+            }
+            
+        },
+        
+        /* In Stock */
+        {
+            'type': 'customProp',
+            'eventType': 'in_stocks',
+            'target': '.ems-prd-list-stock .checkbox',
+            'prop': {
+                'event': 'in_stocks',
+                'parameters': {
+                    'value': 'success'
+                }
+            },
+            'customFunc': function (ID, obj) {
+
+                var id = $(ID);
+
+                if (!id.find('[type="checkbox"]').is(':checked')){
+
+                    var temp = ( id.attr('onchange') || '' ).replace('javascript:', '');
+
+                    id.attr('onchange', `javascript:newAnalytics.push( ${JSON.stringify(obj)}); ${temp}`);
+
+                }
+
+                return obj;
+            }
+        },
+        
+        /* sort_items */
+        {
+            'type': 'addOnClick',
+            'eventType': 'sort_items',
+            'target': '.dropdown-list-inner ul > li a',
+            'prop': {
+                'event': 'sort_items',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'changeProp': 'parameters.value'
+        },
+        /* breadcrumb_clicks */
+        {
+            'type': 'addOnClick',
+            'eventType': 'breadcrumb_clicks',
+            'target': '.navigasyon  .olNavigasyon > li:not(:last-child) a',
+            'prop': {
+                'event': 'breadcrumb_clicks',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            //'changeProp': 'parameters.value',
+            'customFunc': function (ID, obj) {
+
+                var id = $(ID);
+
+                obj['parameters']['value'] = utils.trimText( id.find('span').text() || '' );
+            
+                return obj;
+            }
+        },
+        
+        /* side_category_clicks */
+        {
+            'type': 'addOnClick',
+            'eventType': 'side_category_clicks',
+            'target': '.kutuKategori_icerik .menuKategori li > a',
+            'prop': {
+                'event': 'side_category_clicks',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'changeProp': 'parameters.value'
+        },
+        
+        /* read_more */
+        
+        {
+            'type': 'addOnClick',
+            'eventType': 'read_more',
+            'target': '.urnListContent .moreText',
+            'prop': {
+                'event': 'read_more',
+                'parameters': {
+                    'value': 'success'
+                }
+            }
+        },
+        
+        
+        /* let_me_known */
+        
+        {
+            'type': 'addOnClick',
+            'eventType': 'let_me_known',
+            'target': '.btnStokHaberci',
+            'customMultiOnClick' : true,
+            'prop': {
+                'event': 'let_me_known',
+                'parameters': {
+                    'value': 'success'
+                }
+            }
+        },
+
+        /* appointment-system-button */
+        {
+            'type': 'addOnClick',
+            'eventType': 'monster_appointment_system',
+            'target': '.appointment-system-button',
+            'prop': {
+                'event': 'monster_appointment_system',
+                'parameters': {
+                    'value': 'success'
+                }
+            }
+        },
+
+        /* Social Click */
+        {
+            'type': 'addOnClick',
+            'eventType': 'social_media_clicks',
+            'target': '.footerSocial a[rel]',
+            'prop': {
+                'event': 'social_media_clicks',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'changeProp': 'parameters.value'
+        },
+
+        /* Karşılaştırma sayfası */
+        {
+            'type': 'onTrigger',
+            'eventType': 'compare_item',
+            'target': '.compareWrapper',
+            'prop': {
+                'event': 'compare_item',
+                'parameters': {
+                    'value': ''
+                }
+            },
+            'customFunc': function (ID, obj) {
+
+                obj['parameters']['value'] = minusLoc.get('?', 'uKods');
+            
+                return obj;
+            }
+        },
+
+
+        /* Bu etkinliği göndererek kullanıcının profilim sayfasına geçiş yaptığını belirtin. */
+        {
+            'type': 'onTrigger',
+            'eventType': 'my_profile',
+            'target': '.ems-page-default-info',
+            'prop': {
+                'event': 'my_profile',
+                'parameters': {
+                    'value': 'success'
+                }
+            }
+        },
+
+        /* Bu etkinliği göndererek kullanıcının siparişlerim sayfasına geçiş yaptığını belirtin. */
+        {
+            'type': 'onTrigger',
+            'eventType': 'my_orders',
+            'target': '.ems-page-default-member-order',
+            'prop': {
+                'event': 'my_orders',
+                'parameters': {
+                    'value': 'success'
+                }
+            }
+        },
+
+
+
+        
+    ],
+    set: function (obj = {}) {
+        var _t = this,
+            target = document.querySelectorAll(obj.target || null),
+            type = obj.type || 'addOnClick',
+            prop = obj.prop || {};
+
+        if (target.length > 0 && isGtmActive) {
+            utils.forEach(target, function (i, element) {
+                
+                var title = (element.getAttribute('data-title') || element.getAttribute('rel') || element.getAttribute('title') || element.innerText || '').trim(),
+                    newProp = { ...prop };
+                
+                if (obj.customFunc) {
+                    newProp = obj.customFunc(element, newProp);
+                }
+
+                //
+                var lastValue = newProp;
+                var changeProp = obj.changeProp || '';
+                
+                if (changeProp != ''){
+                    var targeting = (changeProp).split('.');
+                    for (var i = 0; i < targeting.length - 1; i++) {
+                        lastValue = lastValue[targeting[i]];
+                    }
+    
+                    lastValue[targeting[targeting.length - 1]] = title;
+                }
+                
+
+                switch (type) {
+
+                    case 'OnCopyText': {
+                        element.prop = newProp;
+                        element.addEventListener('copy', obj.onCopy);
+                        break;
+                    }
+
+                    case 'customProp': {
+                        
+                        // özel caseleri bu kısımda yazarız. customFunc ne yaılırsa o uygulanır
+                        break;
+                    }
+
+                    case 'addOnClick': {
+                        
+                        var clickFunc = '';
+                        
+                        if(obj.customMultiOnClick == true){
+                            clickFunc = element.getAttribute('onclick') || '';
+                        }
+                        
+                        element.setAttribute('onclick', `newAnalytics.push( ${JSON.stringify(newProp)}); ${clickFunc}`);
+                        break;
+                    }
+
+                    case 'addOnChange': {
+
+                        element.prop = newProp;
+                        element.addEventListener('change', obj.onChange);
+
+                        break;
+                    }
+
+                    case 'onTrigger': {
+                        newAnalytics.push(newProp);
+                        break;
+                    }
+
+                    default:
+                        break;
+                }
+
+            });
+        }
+    },
+    get: function (key = '') {
+        var _t = this,
+            obj = _t.buttons.find(x => x.eventType == key) || {};
+
+        return obj;
+    },
+    find: function (key = '') {
+        var _t = this,
+            obj = _t.buttons.find(x => x.eventType == key) || null;
+
+        if (obj != null)
+            _t.set(obj);
+    },
+    init: function () {
+        var _t = this;
+        utils.forEach(_t.buttons, function (i, obj) {
+            _t.set(obj);
+        });
+    }
+};
+
+setTimeout(function() {
+    customEventsAnalytics.init();
+}, 100);
+
+/////////////// Yeni Analytics Yapısı
+var newAnalytics = {
+    localKeys: {
+        items: 'analyticsItems',
+        loginStatus: 'loginStatus'
+    },
+    url: {
+        items: '/ga4-datalayer-list/?nocache=true'
+    },
+    getUri: function (obj) {
+        obj = obj || {};
+        var _t = this;
+        return _t.url[obj.key || ''].replace(/{{lang}}/g, lang);
+    },
+    storage: function (obj) {
+        obj = obj || {};
+        var _t = this,
+            key = obj.key || '',
+            val = obj.value || '';
+
+        if (obj.type == 'get') {
+            return sessionStorage.getItem(key) || '';
+        } else if (obj.type == 'set') {
+            sessionStorage.setItem(key, val);
+        }else if (obj.type == 'remove') {
+            sessionStorage.removeItem(key);
+        }
+    },
+    parseJSON: function (obj) {
+        obj = obj || {};
+        var _t = this;
+
+        try {
+            return JSON.parse(obj.str);
+        } catch (error) { }
+
+        return obj.def;
+    },
+    getLoginStatus: function () {
+        var _t = this;
+
+        if ($('body').hasClass('ems-logoff'))
+            return false;
+        else
+            return true;
+    },
+    getActiveCategory: function(){
+        var _t = this,
+            current = previousPage.getData() || '';
+
+        return current;
+    },
+    getPageInformation: function (obj) {
+        obj = obj || {};
+
+        var _t = this;
+
+        return {
+            ...obj,
+            'page_title': utils.trimText(document.querySelector('title').innerText || ''),
+            'page_path': window.location.pathname || '',
+            'page_url': window.location.href,
+            'page_category': _t.getActiveCategory(),
+            'page_load_status': 200,
+            'user_login_status': _t.getLoginStatus(),
+        };
+    },
+    updateCartItem: async function(){
+        var _t = this;
+
+        try {
+
+            const response = await fetch(_t.getUri({ key: 'items' }));
+
+            var obj = await response.json();
+
+            var items = {page_information: _t.getPageInformation(obj.page_information || {}), user_information: obj.user_information || {}, user_information_crypted: obj.user_information_crypted || {} };
+
+
+            _t.storage({ key: _t.localKeys.items, type: 'set', value: JSON.stringify(items) });
+        } catch (error) {
+
+        }
+    },
+    isLoaded: false,
+    temp: [],
+    mainObject: {},
+    generateObject: async function(){
+        var _t = this;
+
+        /* item */
+        var items = {},
+            ci = _t.storage({ key: _t.localKeys.items, type: 'get' });
+
+        if (ci != '') {
+            items = _t.parseJSON({ str: ci, def: {} });
+        } else {
+            try {
+
+                const response = await fetch(_t.getUri({ key: 'items' }));
+                var obj = await response.json();
+
+                items = {page_information: _t.getPageInformation(obj.page_information || {}), user_information: obj.user_information || {}, user_information_crypted: obj.user_information_crypted || {} };
+
+                _t.storage({ key: _t.localKeys.items, type: 'set', value: JSON.stringify(items) });
+            } catch (error) {
+
+            }
+        }
+
+        //
+        _t.mainObject = items;
+
+        _t.isLoaded = true;
+
+        if (_t.temp.length > 0){
+            for(var i = 0; i < _t.temp.length; ++i){
+                _t.sendDatalayer(_t.temp[i]);
+            }
+            _t.temp = [];    
+        }
+    },
+    destroy: function(){
+        var _t = this;
+            _t.isLoaded = false;
+            _t.storage({ key: _t.localKeys.items, type: 'remove' });
+    },
+    sendDatalayer: function( obj ){
+        var _t = this;
+
+        if (typeof dataLayer !== 'undefined'){
+
+            var newObj = {..._t.mainObject, ...obj };
+
+            newObj.page_information = { ...newObj.page_information, ..._t.getPageInformation({}) };
+
+            if (obj.event === 'add_to_cart') {
+                var itemId = obj.ecommerce.items[0]?.item_id;
+            
+                if (itemId) {
+                    var currentItem = newObj.page_information.cart_items.find((o) => o.item_id === itemId);
+            
+                    if (currentItem !== undefined) {
+                        var k = JSON.parse(JSON.stringify(currentItem));
+                        newObj.ecommerce.items = [{...k, quantity: 1 }];
+                    }
+                }
+            }else if (obj.event === 'remove_from_cart'){
+
+                var itemId = obj.ecommerce.items[0]?.item_id;
+            
+                if (itemId) {
+                    var currentItem;
+                    
+                    if (window.tempMainObject !== undefined){
+                        currentItem = window.tempMainObject.page_information.cart_items.find((o) => o.item_id === itemId);
+                    }else{
+                        currentItem = newObj.page_information.cart_items.find((o) => o.item_id === itemId);
+                    }
+
+                    if (currentItem !== undefined) {
+
+                        var isQuantity = newObj.page_information.cart_items.some((o) => o.item_id === itemId); // doğru ürün adedini set etmek için eğer mevcut sepetde varsa 1 set ederiz yani kullanıcı - tuşuna basmıştır
+
+                        var k = JSON.parse(JSON.stringify(currentItem));
+                        newObj.ecommerce.items = isQuantity ? [{ ...k, quantity: 1 }] : [k];
+                    }
+                }
+            }else if (obj.event === 'view_cart' || obj.event === 'begin_checkout' || obj.event === 'add_shipping_info' ||  obj.event === 'add_payment_info' || obj.event === 'purchase'){
+
+                // sepet adımlarına ozel kod: amacı BE tarafındaki geliştirme maliyetini düşürme. Script manager maliyetliydi razor üzerinde bu yapıldı
+                if ($('.ems-page-cart-wrapper').length > 0){
+                    
+                    try {
+                        var k = JSON.parse(JSON.stringify(newObj.page_information.cart_items || []));
+                        newObj.ecommerce.items = k;
+                    } catch (error) {
+                        // Hata işleme kodu
+                    }         
+                }
+
+
+            }
+
+            dataLayer.push(newObj);
+        } 
+    },
+    push: function (dataLayerObj) {
+        dataLayerObj = dataLayerObj || {};
+
+        var _t = this;
+
+        if (!_t.isLoaded){
+            _t.temp.push(dataLayerObj);
+        }else{
+            _t.sendDatalayer(dataLayerObj);
+        }
+    },
+    checkLoginStatus: function(){
+        /*
+            logoff durumunda logine veya tam tersi durumda sepet guncelleniyor. Tekrar istek atmayı sağlamak için login durumunu kontrol ediyoruz. eğer bir farklılık varsa sessiondaki bilgiyi sildiriyoruz.
+        */
+        var _t = this,
+            loginStatus = _t.getLoginStatus(),
+            loginStatusStorage = _t.storage({ key: _t.localKeys.loginStatus, type: 'get' }) || 'false';
+        
+        /* */
+        if (loginStatusStorage != loginStatus.toString())
+            _t.destroy();
+
+        /* sepet ilk aşamada yine session sepetin son halini çek */
+        if (document.querySelector('.ems-page-cart-step0'))    
+            _t.destroy();
+
+        if( loginStatus )
+            _t.storage({ key: _t.localKeys.loginStatus, type: 'set', value: 'true' });
+        else
+            _t.storage({ key: _t.localKeys.loginStatus, type: 'set', value: 'false' });
+    }
+};
+
+newAnalytics.checkLoginStatus();
+/*
+    Genel mantığı mini cart asenkron yuklendiği için onu ayrı bir fonk ile yukleteceğiz(generateObject).
+    push fonk gonderdiğimiz objeler eğer minicart tamamlandıysa sendDatalayer fonk. tamamlanmamışsa temp arrayinde gelen şeyleri tutarız. 
+    generateObject minicart yuklendikten sonra temp dolu ise ordaki objeleri yollarız.
+*/
+newAnalytics.generateObject();
+
+// Listener
+function ON_ADD_TO_CART_WITH_ANALYTICS( obj ){
+    obj = obj ||  {};
+    if (obj.type == 'BEFORE_ADD_TO_CART'){
+        newAnalytics.destroy();
+    }else if (obj.type == 'AFTER_ADD_TO_CART'){
+        newAnalytics.generateObject();
+    }
+}
+
+stage.addEventListener("CustomEvent", [{ type: "sepeteEkleCustomizeNew", handler: "ON_ADD_TO_CART_WITH_ANALYTICS" }]);
+
+stage.addEventListener("CustomEvent", [{ type: "sepeteEkle", handler: "ON_ADD_TO_CART_WITH_ANALYTICS" }]);
+
+stage.addEventListener("CustomEvent", [{ type: "ADD_TO_CART", handler: "ON_ADD_TO_CART_WITH_ANALYTICS" }]);
+
+// sepetden ürün sil
+function ON_REMOVE_FROM_CART_WITH_ANALYTICS( obj ){
+    obj = obj ||  {};
+    if (obj.type == 'BEFORE_REMOVE_FROM_CART'){
+        window.tempMainObject = {...newAnalytics.mainObject};
+        newAnalytics.destroy();
+    }else if (obj.type == 'AFTER_REMOVE_FROM_CART'){
+        newAnalytics.generateObject();
+    }
+}
+
+stage.addEventListener("CustomEvent", [{ type: "REMOVE_FROM_CART", handler: "ON_REMOVE_FROM_CART_WITH_ANALYTICS" }]);
+
+// sepet güncelle
+
+function ON_UPDATE_FROM_CART_WITH_ANALYTICS( obj ){
+    obj = obj ||  {};
+    if (obj.type == 'BEFORE_UPDATE_FROM_CART'){
+        window.tempMainObject = {...newAnalytics.mainObject};
+        newAnalytics.destroy();
+    }else if (obj.type == 'AFTER_UPDATE_FROM_CART'){
+        newAnalytics.generateObject();
+    }
+}
+
+stage.addEventListener("CustomEvent", [{ type: "UPDATE_FROM_CART", handler: "ON_UPDATE_FROM_CART_WITH_ANALYTICS" }]);
+
+//
+function ON_DIGITAL_STORE(){
+    newAnalytics.push({
+        'event': 'digital_store',
+        'parameters': {
+            'value': 'success'
+        }
+    });
+}
+stage.addEventListener("CustomEvent", [{ type: "ONDIGITALSTORE", handler: "ON_DIGITAL_STORE" }]);
+
+
+
+/* Previous Page */
+var previousPage = {
+    loc: window.location.href,
+    key: {
+        tempPageUrl: 'temp-page-url',
+        tempData: 'temp-data'
+    },
+    getData: function () {
+        var _t = this,
+            pageName = '';
+
+        switch (true) {
+            case document.querySelectorAll('.ems-page-home').length > 0: {
+                pageName = 'Home';
+                break;
+            }
+            case document.querySelectorAll('.ems-page-cart').length > 0: {
+                pageName = 'Cart';
+                break;
+            }
+            case document.querySelectorAll('.ems-page-default-member-order').length > 0:
+            case document.querySelectorAll('.ems-page-default-order-detail').length > 0: {
+                pageName = 'Order';
+                break;
+            }
+            case document.querySelectorAll('.ems-page-default-favorites').length > 0: {
+                pageName = 'Favorite';
+                break;
+            }
+            case document.querySelectorAll('.ems-page-default-follow-list').length > 0: {
+                pageName = 'Follow List';
+                break;
+            }
+
+            case document.querySelectorAll('.ems-page-default-address').length > 0: {
+                pageName = 'Address Info';
+                break;
+            }
+
+            case document.querySelectorAll('.ems-page-default-message').length > 0: {
+                pageName = 'Messages';
+                break;
+            }
+
+            case document.querySelectorAll('.ems-page-default-password').length > 0: {
+                pageName = 'Change Password';
+                break;
+            }
+
+            case document.querySelectorAll('.ems-page-default-info').length > 0: {
+                pageName = 'Account Info';
+                break;
+            }
+
+            case document.querySelectorAll('.navigasyon.urunNavigasyon .olNavigasyon li').length > 0: {
+
+                if ($('.ems-page-detail').length > 0){
+                    pageName =  (document.querySelector('.navigasyon.urunNavigasyon .olNavigasyon li:nth-last-child(2)').innerText || '').trim();
+                }else{
+                    pageName = (document.querySelector('.navigasyon.urunNavigasyon .olNavigasyon li:last-child').innerText || document.querySelector('.navigasyon.urunNavigasyon .olNavigasyon:last-child').previousElementSibling.innerText || '').trim();
+                }
+                
+                break;
+            }
+
+            case document.querySelectorAll('.navigasyon.icerikNavigasyon .olNavigasyon li').length > 0: {
+                pageName = (document.querySelector('.navigasyon.icerikNavigasyon .olNavigasyon li:last-child').innerText || document.querySelector('.navigasyon.icerikNavigasyon .olNavigasyon:last-child').previousElementSibling.innerText || '').trim();
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        return pageName;
+    },
+    getTempData: function () {
+        var _t = this,
+            tempData = [];
+
+        try {
+            tempData = JSON.parse(_t.getStorage({ key: _t.key.tempData }) || '[{"item_list_id": "direct", "item_list_name": "direct"}]');
+        } catch (error) {
+
+        }
+        return tempData;
+    },
+    setData: function () {
+        var _t = this,
+            tempData = _t.getTempData();
+
+        tempData.push({ "item_list_id": window.location.pathname, "item_list_name": _t.getData() });
+
+        _t.setStorage({ key: _t.key.tempData, data: JSON.stringify(tempData) });
+    },
+    getCurrentData: function () {
+        var _t = this,
+            tempData = _t.getTempData();
+
+        if ($('.ems-page-detail').length > 0){
+            return tempData.length <= 2 ? tempData[0] : tempData[tempData.length - 2];
+        }else{
+            return { "item_list_id": window.location.pathname, "item_list_name": _t.getData() };
+        }    
+        
+    },
+    getStorage: function ({ key }) {
+        var _t = this;
+        return sessionStorage.getItem(key) || '';
+    },
+    setStorage: function ({ key, data }) {
+        var _t = this;
+        return sessionStorage.setItem(key, data);
+    },
+    checkURL: function () {
+        var _t = this,
+            state = false,
+            tempPageUrl = _t.getStorage({ key: _t.key.tempPageUrl });
+        if (tempPageUrl != _t.loc && document.querySelectorAll('.ems-page-detail-customize').length == 0) {
+            state = true;
+        }
+        return state;
+    },
+    init: function () {
+        var _t = this;
+        _t.loc = window.location.href;
+        if (_t.checkURL()) {
+            _t.setData();
+            _t.setStorage({ key: _t.key.tempPageUrl, data: _t.loc });
+        }
+
+        console.log("active page", _t.getCurrentData());
+    }
+};
+
+previousPage.init();
+function ON_LIST_LOADED_WITH_PREVIOUS_PAGE() {
+    previousPage.init();
+}
+stage.addEventListener("CustomEvent", [{ type: 'ONLISTLOADED', handler: 'ON_LIST_LOADED_WITH_PREVIOUS_PAGE' }]);
+
+
+// banner promotion clicked
+var bannerPromotionClick = {
+    loc: '',
+    key: {
+      tempPageUrl: 'promotion-temp-page-url',
+      promotionClicked: 'promotionClicked'
+    },
+    el: {
+      promoBtn: '.main-slider .swiper-link',
+      prdBtn: '.ems-prd-list .emosInfinite .ems-prd-lnk, .ems-prd-list .emosInfinite .ems-prd-detail-link > a'
+    },
+    storage: function (obj) {
+      obj = obj || {};
+      var _t = this,
+        key = obj.key || '',
+        val = obj.value || '';
+  
+      if (obj.type == 'get') {
+        return sessionStorage.getItem(key) || '';
+      } else if (obj.type == 'set') {
+        sessionStorage.setItem(key, val);
+      } else if (obj.type == 'remove') {
+        sessionStorage.removeItem(key);
+      }
+    },
+    addEvent: function () {
+      var _t = this;
+  
+      /* Product Click */
+      if (document.querySelectorAll(_t.el.prdBtn).length > 0) {
+        utils.forEach(document.querySelectorAll(_t.el.prdBtn), function (index, element) {
+  
+          element.addEventListener('click', function (evt) {
+            var ths = this,
+              hrf = ths.getAttribute('href') || '';
+  
+            if (hrf != '' && hrf != '#' && hrf.indexOf('javascript:') == -1) {
+  
+              evt.preventDefault();
+  
+              var obj = _t.getPromotion();
+  
+              _t.storage({ type: 'set', key: _t.key.promotionClicked, value: JSON.stringify(obj) });
+              _t.storage({ type: 'set', key: _t.key.tempPageUrl, value: hrf });
+  
+              window.location.href = hrf;
+            }
+  
+  
+          });
+  
+        });
+      }
+  
+      /* Promotion Click */
+      if (document.querySelectorAll(_t.el.promoBtn).length > 0) {
+        utils.forEach(document.querySelectorAll(_t.el.promoBtn), function (index, element) {
+  
+          element.addEventListener('click', function (evt) {
+            var ths = this,
+              hrf = ths.getAttribute('href') || '',
+              prts = utils.getParents(ths, '[data-promo-creativename]');
+  
+            if (prts && hrf != '' && hrf != '#' && hrf.indexOf('javascript:') == -1) {
+  
+              evt.preventDefault();
+  
+              var obj = {
+                creative_name: prts.getAttribute('data-promo-creativename'),
+                creative_slot: prts.getAttribute('data-promo-creativeslot'),
+                promotion_id: prts.getAttribute('data-promo-promotionid'),
+                promotion_name: prts.getAttribute('data-promo-promotionname')
+              };
+  
+              _t.storage({ type: 'set', key: _t.key.promotionClicked, value: JSON.stringify(obj) });
+              _t.storage({ type: 'set', key: _t.key.tempPageUrl, value: hrf });
+  
+              window.location.href = hrf;
+            }
+          });
+  
+        });
+      }
+    },
+    getPromotion: function () {
+      var _t = this,
+        obj = { creative_name: '', creative_slot: '', promotion_id: '', promotion_name: '' };
+  
+      try {
+  
+        obj = JSON.parse(_t.storage({ type: 'get', key: _t.key.promotionClicked }) || "{creative_name: '', creative_slot: '', promotion_id: '', promotion_name: ''}");
+  
+      } catch (error) {
+  
+      }
+  
+      return obj;
+    },
+    checkURL: function () {
+      var _t = this,
+        state = false,
+        tempPageUrl = _t.storage({ type: 'get', key: _t.key.tempPageUrl }) || '';
+      if (tempPageUrl != '' && tempPageUrl != _t.loc && document.querySelectorAll('.ems-page-detail-customize').length == 0) {
+        state = true;
+      }
+      return state;
+    },
+    set: function () {
+      var _t = this;
+  
+      if (_t.checkURL()) {
+        _t.storage({ type: 'remove', key: _t.key.tempPageUrl });
+        _t.storage({ type: 'remove', key: _t.key.promotionClicked });
+      }
+    },
+    init: function () {
+      var _t = this;
+      _t.loc = (window.location.pathname || '') + (window.location.search || '');
+      _t.set();
+      _t.addEvent();
+    }
+  };
+  
+  setTimeout(function(){
+    bannerPromotionClick.init();
+  }, 100);
+
+
+/* Get Product Detection */
+var gtmGa4Push = {
+    productsData: [],
+    userInformation: {},
+    el: {
+        container: '[data-gtm]',
+        products: '.urnList .ems-prd',
+        productDetail: '.ems-page-detail',
+        homePage: '.ems-page-home',
+        code: '.ems-urn-code',
+        prdCode: '.ems-prd-code',
+    },
+    cls: {
+        activeted: 'gtm-activeted'
+    },
+    widgetType: 'view_item_list',
+    uri: '/ga4-datalayer-list/?productIds={{productIds}}&event=view_item&nocache=true',
+    /*
+    widgetType: 'Category',
+    uri: '/sempeak-datalayer-list/?productIds={{productIds}}&pageType={{pageType}}',*/
+    getURI: function (o) {
+        o = o || {};
+        var _t = this;
+        return _t.uri.replace(/{{productIds}}/g, o.code || '').replace(/{{pageType}}/g, o.type || '');
+    },
+    clearProductsData: function () {
+        var _t = this;
+        _t.productsData = [];
+        _t.productsData.length = 0;
+        _t.userInformation = {};
+    },
+    setProductsData: function () {
+        // ürün listede ilk açılışda tüm ürün dtasını tek seferde çekmek
+        var _t = this,
+            code = [],
+            type = _t.widgetType;
+
+        if (document.querySelectorAll(_t.el.products).length > 0) {
+            utils.forEach(document.querySelectorAll(_t.el.products), function (index, target) {
+                code.push(utils.trimText(target.querySelector(_t.el.code).innerText || ''));
+            });
+
+            utils.ajx({ uri: _t.getURI({ code: code.join(','), type: type }) }, function (o) {
+                var data = o.data
+                _t.productsData = data.ecommerce.items;
+                _t.userInformation = data.user_information;
+                _t.adjust();
+                stage.dispatchEvent("CustomEvent", "GTM_PUSH", { type: 'loadProductListData', data: { products: _t.productsData, userInformation: _t.userInformation } });
+            });
+        }
+
+    },
+    findProducts: function (idx) {
+        var _t = this,
+            prd = null;
+
+        for (var i = 0; i < _t.productsData.length; ++i) {
+            if (_t.productsData[i].item_id == idx) {
+                prd = _t.productsData[i];
+            }
+        }
+
+        return prd;
+    },
+    adjust: function () {
+        var _t = this;
+
+
+        // products widgets
+        utils.forEach(document.querySelectorAll(_t.el.container), function (index, target) {
+
+            if (getComputedStyle(target).display !== 'none') {
+
+                var rate = target.getAttribute('data-rate') || 1,
+                    threshold = target.getAttribute('data-threshold') || 0,
+                    type = target.getAttribute('data-gtm') || _t.widgetType,
+                    cls = _t.cls.activeted;
+
+
+                if (!utils.hasClass({ element: target, value: cls }) && utils.detectPosition({ target: target, elementNext: false, rate: rate, threshold: threshold })) {
+
+                    if (target.querySelectorAll(_t.el.code).length > 0) {
+
+                        target.classList.add(cls);
+
+                        var code = [];
+
+                        utils.forEach(target.querySelectorAll(_t.el.code), function (index, target) {
+                            code.push(utils.trimText(target.innerText || ''));
+                        });
+
+                        utils.ajx({ uri: _t.getURI({ code: code.join(','), type: type }) }, function (o) {
+                            stage.dispatchEvent("CustomEvent", "GTM_PUSH", { type: 'container', ID: target, data: { products: o.data.ecommerce.items, userInformation: o.data.user_information } });
+                        });
+
+                    }
+
+                }
+            }
+
+        });
+
+        // products list
+        var products = [];
+        utils.forEach(document.querySelectorAll(_t.el.products), function (index, target) {
+
+            if (getComputedStyle(target).display !== 'none' && _t.productsData.length > 0) {
+
+                var rate = target.getAttribute('data-rate') || 1,
+                    threshold = target.getAttribute('data-threshold') || 0,
+                    type = target.getAttribute('data-gtm') || _t.widgetType,
+                    cls = _t.cls.activeted;
+
+                if (!utils.hasClass({ element: target, value: cls }) && utils.detectPosition({ target: target, elementNext: false, rate: rate, threshold: threshold })) {
+
+                    target.classList.add(cls);
+
+                    var code = target.querySelector(_t.el.code) ? utils.trimText(target.querySelector(_t.el.code).innerText || '') : '',
+                        prd = _t.findProducts(code);
+
+                    if (prd != null)
+                        products.push(prd);
+                }
+            }
+
+        });
+
+        if (products.length > 0)
+            stage.dispatchEvent("CustomEvent", "GTM_PUSH", { type: 'container', ID: document.querySelectorAll(_t.el.products + '.' + _t.cls.activeted), data: { products: products, userInformation: _t.userInformation } });
+
+    },
+    addEvent: function () {
+        var _t = this;
+        document.addEventListener('scroll', function () { _t.adjust(); });
+        window.addEventListener('resize', function () { _t.adjust(); });
+        window.addEventListener('orientationchange', function () { _t.adjust(); });
+    },
+    promotions: [],
+    customGtmTrigger: function () {
+        var _t = this,
+            type = _t.widgetType;
+
+        /* detay sayfası */
+        if (document.querySelectorAll(_t.el.productDetail).length > 0 && document.querySelectorAll('.ems-page-detail-customize').length == 0) {
+            utils.ajx({ uri: _t.getURI({ code: ($('[id$="hdnURN_KOD"]').eq(0).val() || '').trim(), type: type }) }, function (o) {
+
+                var data = o.data;
+                var products = data.ecommerce.items;
+                var userInformation = data.user_information;
+
+                var currentObj = {};
+                if (typeof previousPage !== 'undefined') {
+
+                    currentObj = previousPage.getCurrentData();
+
+                    products = products.map(item => {
+                        return { ...item, ...currentObj, ...bannerPromotionClick.getPromotion() };
+                    })
+                }
+
+                newAnalytics.push({
+                    'event': 'view_item',
+                    'ecommerce': {
+                        'currency': 'TRY',
+                        'value': products[0].price,
+                        'items': products
+                    },
+                    //'userInformation': userInformation
+                });
+            });
+        }
+
+        /* Anasayfa */
+        if (document.querySelectorAll(_t.el.homePage).length > 0) {
+
+            var code = [];
+            $('.main-slider [data-product-id]')
+                .each(function () {
+                    var ths = $(this),
+                        k = ths.attr('data-product-id') || '';
+                    if (k != '') {
+                        code.push(k);
+                    }
+                });
+
+            var products = [];
+            var userInformation = {};
+            utils.ajx({ uri: _t.getURI({ code: code.length > 0 ? code.join(',').trim() : -1, type: type }) }, function (o) {
+                products = o.data.ecommerce.items;
+                userInformation = o.data.user_information;
+
+
+                var currentObj = {};
+                if (typeof previousPage !== 'undefined' && products.length > 0) {
+
+                    currentObj = previousPage.getCurrentData();
+
+                    products = products.map(item => {
+                        return { ...item, ...currentObj };
+                    });
+                }
+
+                var findProducts = function (idx) {
+                    var _t = this,
+                        prd = null;
+
+                    for (var i = 0; i < products.length; ++i) {
+                        if (products[i].item_id == idx) {
+                            prd = [products[i]];
+                        }
+                    }
+
+                    return prd;
+                }
+
+                //var promotions = [];
+                $('.main-slider .swiper-slide')
+                    .not('.swiper-slide-duplicate')
+                    .each(function () {
+
+                        var ths = $(this);
+
+                        var prdId = ths.attr('data-product-id') || '';
+
+                        var obj = {
+                            idx: (ths.find('.bnr_code').text() || '').trim(),
+                            creative_slot: 'Anasayfa Slider',
+                            creative_name: (ths.attr('data-creative-name') || '').trim(),
+                            location_id: 'ChIJcxF342i4yhQRuJZzcoKSGDo',
+                            promotion_id: (ths.find('picture img').attr('src') || '').trim(),
+                            promotion_name: (ths.attr('data-title') || '').trim(),
+                            items: findProducts(prdId) || [],
+                            active: false
+                        };
+
+                        _t.promotions.push(obj);
+
+                    });
+                    
+                    // bannerPromotionClick çalışması için html manipule edildi
+                    $('.main-slider .swiper-slide')
+                    .not('.swiper-slide-duplicate')
+                    .each(function () {
+
+                        var ths = $(this);
+
+                        ths.attr('data-promo-creativename',  (ths.attr('data-creative-name') || '').trim());
+
+                        ths.attr('data-promo-creativeslot', 'Anasayfa Slider');
+
+                        ths.attr('data-promo-promotionid', (ths.find('picture img').attr('src') || '').trim());
+
+                        ths.attr('data-promo-promotionname', (ths.attr('data-title') || '').trim());
+
+                    });
+
+                // send datalayer
+                sendPromotion();
+                /*newAnalytics.push({
+                    'event': 'view_promotion',
+                    'ecommerce': promotions,
+                    //'userInformation': userInformation
+                });*/
+
+
+                $('.main-slider .swiper-slide a')
+                    .unbind('click')
+                    .bind('click', function (evt) {
+                        evt.preventDefault();
+
+                        var ths = $(this),
+                            uri = ths.attr('href') || '',
+                            prts = ths.parents('.swiper-slide'),
+                            code = (ths.parents('.swiper-slide').attr('data-product-id') || '').trim(),
+                            prd = findProducts(code) || [];
+
+
+                        ths.unbind('click');
+
+                        var obj = {
+                            creative_slot: 'Anasayfa Slider',
+                            creative_name: (prts.attr('data-creative-name') || '').trim(),
+                            location_id: 'ChIJcxF342i4yhQRuJZzcoKSGDo',
+                            promotion_id: (prts.find('picture img').attr('src') || '').trim(),
+                            promotion_name: (prts.attr('data-title') || '').trim(),
+                            items: prd
+                        };
+
+                        newAnalytics.push({
+                            'event': 'select_promotion',
+                            'ecommerce': obj,
+                            //'userInformation': userInformation,
+                            'eventCallback': function () {
+                                if (uri != '')
+                                    document.location = uri;
+                            },
+                        });
+
+
+                    });
+
+            });
+        }
+
+        /* Footer Telefon */
+        $('.footerTel a, .phone-btn, [href^="tel:"]')
+            .unbind('click')
+            .bind('click', function (e) {
+                //e.preventDefault();
+
+                var ths = $(this),
+                    phone = (ths.find('span').text() || '').trim();
+
+                utils.ajx({ uri: _t.getURI({ code: -1, type: type }) }, function (o) {
+
+                    var userInformation = o.data.user_information;
+
+                    newAnalytics.push({
+                        'event': 'phone_call',
+                        'parameters': {
+                            phone: phone,
+                        },
+                        //'userInformation': userInformation
+                    });
+                });
+
+            });
+
+    },
+    init: function () {
+        var _t = this;
+        _t.setProductsData();
+        _t.addEvent();
+        _t.adjust();
+        _t.customGtmTrigger();
+    }
+};
+
+gtmGa4Push.init();
+
+
+//////////// SEARCH
+
+function ON_SEARCH_RESULT_WITH_ANALYTICS(){
+    var input = $('[id="txtARM_KEYWORD"]'),
+        searchText = ( input.val() || '' ).trim();
+
+    if (searchText != ''){
+
+        utils.ajx({ uri: gtmGa4Push.getURI({ code: -1, type: gtmGa4Push.widgetType }) }, function (o) {
+
+            var userInformation = o.data.user_information;
+
+            newAnalytics.push({
+                'event': 'search',
+                'parameters': {
+                    'value': searchText
+                },
+                //'userInformation': userInformation
+            });
+        });
+
+
+    }    
+}
+stage.addEventListener("CustomEvent", [{ type: "aramaSonucDoldur", handler: "ON_SEARCH_RESULT_WITH_ANALYTICS" }]);
+
+
+//////////// FAVORITE
+function ON_ADD_TO_FAVORITE_WITH_ANALYTICS( o ){
+    console.log(o);
+    if (o.type == 'add'){
+
+        newAnalytics.push({
+            'event': 'add_to_wishlist',
+            'parameters': {
+                'value': o.id
+            }
+        });
+
+        /*
+        utils.ajx({ uri: gtmGa4Push.getURI({ code: o.id, type: gtmGa4Push.widgetType }) }, function (o) {
+
+            var userInformation = o.data.user_information;
+            var products = o.data.ecommerce.items;
+
+            if (typeof previousPage !== 'undefined') {
+
+                var currentObj = previousPage.getCurrentData();
+
+                products = products.map(item => {
+                    return { ...item, ...currentObj, ...bannerPromotionClick.getPromotion() };
+                })
+            }
+
+            newAnalytics.push({
+                'event': 'add_to_wishlist',
+                'ecommerce': {
+                    'currency': 'TRY',
+                    'value': products[0].price,
+                    'items': products
+                },
+                //'userInformation': userInformation
+            });
+        });
+
+        */
+
+    }else{
+
+
+        newAnalytics.push({
+            'event': 'remove_from_favorioute_list',
+            'parameters': {
+                'value': o.id
+            }
+        });
+
+
+    }
+}
+stage.addEventListener("CustomEvent", [{ type: 'ADD_TO_FAVORITE', handler: 'ON_ADD_TO_FAVORITE_WITH_ANALYTICS' }]);
+
+///////////
+
+function ON_COMPARE_EVENTS_WITH_ANALYTICS(o){
+
+    var isState = o.state || false;
+
+    if (isState){
+        newAnalytics.push({
+            'event': 'add_to_compare',
+            'parameters': {
+                'value': o.id
+            }
+        });
+    }else{
+        newAnalytics.push({
+            'event': 'remove_from_compare',
+            'parameters': {
+                'value': o.id
+            }
+        });
+    }
+
+}
+stage.addEventListener("CustomEvent", [{ type: 'COMPARE_EVENTS', handler: 'ON_COMPARE_EVENTS_WITH_ANALYTICS' }]);
+
+///////////
+function ON_LIST_LOADED_GTM_PUSH_EVENT() {
+    ON_PRD_LIST_SET();
+    setTimeout(function () {
+        gtmGa4Push.clearProductsData();
+        gtmGa4Push.setProductsData();
+
+
+        ///
+        customEventsAnalytics.find('filter_clicks');
+        customEventsAnalytics.find('in_stocks');
+        customEventsAnalytics.find('sort_items');
+        customEventsAnalytics.find('breadcrumb_clicks');
+        customEventsAnalytics.find('side_category_clicks');
+        customEventsAnalytics.find('read_more');
+
+    }, 100);
+}
+function ON_WIDGET_LOADED_GTM_PUSH_EVENT() {
+    ON_PRD_LIST_SET();
+    setTimeout(function () {
+        gtmGa4Push.adjust();
+    }, 100);
+}
+stage.addEventListener("CustomEvent", [{ type: 'ONLISTLOADED', handler: 'ON_LIST_LOADED_GTM_PUSH_EVENT' }]);
+stage.addEventListener("CustomEvent", [{ type: 'SYSTEM_WIDGET_LOADED', handler: 'ON_WIDGET_LOADED_GTM_PUSH_EVENT' }]);
+stage.addEventListener("CustomEvent", [{ type: 'WIDGET_LOADED', handler: 'ON_WIDGET_LOADED_GTM_PUSH_EVENT' }]);
+
+function ON_PRD_LIST_SET() {
+    var target = $('.ems-prd .ems-urn-code');
+
+    if (target.length > 0)
+        target
+            .each(function () {
+                var ths = $(this),
+                    prts = ths.parents('.ems-prd'),
+                    k = ths.text().trim();
+
+                prts.attr('data-code', k);
+            });
+}
+
+ON_PRD_LIST_SET();
+
+/* Send GTM */
+function sendGtm(o) {
+    o = o || {};
+    var ID = o.ID,
+        eventName = o.data.eventName || 'view_item_list',
+        products = o.data.products,
+        userInformation = o.data.userInformation,
+        findProducts = function (idx) {
+            var prd = null;
+            for (var i = 0; i < products.length; ++i) {
+                if (products[i].item_id == idx) {
+                    prd = products[i];
+                }
+            }
+
+            return prd;
+        };
+
+    var currentObj = {};
+    if (typeof previousPage !== 'undefined') {
+
+        currentObj = previousPage.getCurrentData();
+
+        products = products.map(item => {
+            return { ...item, ...currentObj, ...bannerPromotionClick.getPromotion() };
+        })
+    }
+
+    newAnalytics.push({
+        'event': eventName,
+        'ecommerce': {
+            'currency': 'TRY',
+            ...currentObj,
+            'items': products
+        },
+        //'userInformation': userInformation
+    });
+
+    $(ID)
+        .find('.ems-prd-lnk, .ems-prd-content > a, .ems-prd-image > a')
+        .unbind('click')
+        .bind('click', function (evt) {
+            evt.preventDefault();
+
+            var ths = $(this),
+                uri = ths.attr('href') || '',
+                code = (ths.parents('.ems-prd').attr('data-code') || '').trim(),
+                prd = findProducts(code);
+
+            if (prd != null) {
+
+                ths.unbind('click');
+
+                newAnalytics.push({
+                    'event': 'select_item',
+                    'ecommerce': {
+                        ...currentObj,
+                        'items': [prd]
+                    },
+                    //'userInformation': userInformation,
+                    'eventCallback': function () {
+                        if (uri != '')
+                            document.location = uri;
+                    },
+                });
+
+            } else {
+                document.location = uri;
+            }
+        })
+}
+
+function ON_GTM_PUSH(o) {
+    o = o || {};
+    try {
+        var ID = o.ID,
+            type = o.type,
+            data = o.data;
+        switch (type) {
+            case 'container':
+                sendGtm(o);
+                break;
+            default:
+                break;
+        }
+    } catch (error) {
+    }
+}
+stage.addEventListener("CustomEvent", [{ type: "GTM_PUSH", handler: "ON_GTM_PUSH" }]);
+
+///
+function sendPromotion(){
+    var target = $(".ems-page-home .main-slider .swiper-slide-active");
+
+    if (target && gtmGa4Push.promotions.length > 0){
+
+        var code = (target.find('.bnr_code').text() || '').trim();
+
+        var obj = gtmGa4Push.promotions.find(x=>x.idx == code);
+
+        if (!obj.active){
+            obj.active = true;
+
+            var newData = Object.assign({}, obj);
+            delete newData.idx;
+            delete newData.active;
+
+
+            newAnalytics.push({
+                'event': 'view_promotion',
+                'ecommerce': newData
+            });
+
+        }
+    }
+    
+}
+function ON_SWIPER_EVENTS_WITH_ANALYTICS(obj){
+    obj = obj || {};
+    var target = obj.ID,
+        type = obj.type || '';
+    if (target && target.hasClass('main-slider') && (type == 'slideChangeEnd' || type == 'init') && gtmGa4Push.promotions.length > 0){
+        sendPromotion();
+    }
+}
+stage.addEventListener("CustomEvent", [{ type: "ON_SWIPER_EVENTS", handler: "ON_SWIPER_EVENTS_WITH_ANALYTICS" }]);

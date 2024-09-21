@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+
+
+    <script>
+
+const  vucutKitleİndexi = (boy,kilo) => {
+
+const islemSonucu = kilo/ (boy*boy);
+
+ if (islemSonucu<18.5){
+   console.log("Kilonuz :" + "" + kilo +"kg"+ "\nBoyunuz :"+ boy + "cm" +"\nİdeal kilonun altı" + "=" + islemSonucu);
+ }
+
+ else if (islemSonucu<24.9 && islemSonucu>18.5){
+    console.log("Kilonuz :" + "" + kilo +"kg"+ "\nBoyunuz :"+ boy + "cm" +"\nİdeal kilo" + "=" + islemSonucu);
+ }
+
+ else if (islemSonucu<29.9 && islemSonucu>25){
+    console.log("Kilonuz :" + "" + kilo +"kg"+ "\nBoyunuz :"+ boy + "cm" +"\nİdeal kilo üstü" + "=" + islemSonucu);
+ }
+
+ else if (islemSonucu<39.9 && islemSonucu>30){
+    console.log("Kilonuz :" + "" + kilo +"kg"+ "\nBoyunuz :"+ boy + "cm" +"\nİdeal kilonun çok üstü(OBEZ!)" + "=" + islemSonucu);
+ }
+
+ else if (islemSonucu>40){
+    console.log("Kilonuz :" + "" + kilo +"kg"+ "\nBoyunuz :"+ boy + "cm" +"\nMORBİD OBEZ!" + "=" + islemSonucu);
+ }
+
+}
+
+vucutKitleİndexi(150,90);
+
+    </script>
+    
+</body>
+</html>
+
+
+
